@@ -36,7 +36,7 @@
         .res { margin-bottom: 20px; line-height: 1.5; border-bottom: 1px dashed #ccc; padding-bottom: 15px; }
         .res:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
         .res-meta { color: #228b22; font-weight: bold; }
-        .res-num { color: #228b22; cursor: pointer; text-decoration: underline; } /* アンカー用リンク */
+        .res-num { color: #228b22; cursor: pointer; text-decoration: underline; }
         .res-name { color: #228b22; }
         .itchi-tag { color: #ff0000; font-weight: bold; }
         .res-body { margin-top: 5px; white-space: pre-wrap; padding-left: 15px; color: #000000; }
@@ -48,7 +48,7 @@
 
     <div class="header">
         <h1>お前らの避難所掲示板(仮)</h1>
-        <p>バグを修正し、アンカー機能（レス番クリックで返信）を追加した最新版です。</p>
+        <p>初期スレッドを追加し、完全に動作するようになった最新コードです。</p>
     </div>
 
     <div class="main-layout">
@@ -93,29 +93,38 @@
     </div>
 
     <script>
-        // 初期のテストスレッドデータ
+        // 初めてページを開いた時の「ようこそスレッド」データ
         const defaultData = [
             {
-                id: "thread_default_1",
-                title: "【本スレ】雑談スレッド ★1",
+                id: "thread_welcome_2ch",
+                title: "【歓迎】ようこそ２ちゃんねる風の避難所へ！ ★1",
                 creatorName: "管理人 ★",
                 posts: [
-                    { name: "管理人 ★", date: "2026/09/25(金) 20:00:00", uniqueSign: "◆Ad7B9", body: "２ちゃんねる風の掲示板を開設しました！\n1スレ最大500レスまで書き込めます。" },
-                    { name: "名無しさん", date: "2026/09/25(金) 20:05:23", uniqueSign: "◆Xy3Z8", body: "スレ番（数字）をクリックすると、自動で「>>数字」って本文に入力されるぞ！" }
+                    { 
+                        name: "管理人 ★", 
+                        date: "2026/09/25(金) 20:00:00", 
+                        uniqueSign: "◆Ad7B9", 
+                        body: "自分専用の匿名掲示板へようこそ！\n\n・1スレ最大500レス制限\n・投稿者が同じか分かる「独自記号」\n・スレ主がすぐ分かる「[イッチ]」タグ\n・レス番号クリックでの「アンカー(>>)」自動入力\n\nこれらの機能を搭載しています。左のメニューから新スレを建てることもできます！自由に楽しんでいってね！" 
+                    },
+                    { 
+                        name: "名無しさん", 
+                        date: "2026/09/25(金) 20:05:00", 
+                        uniqueSign: "◆Xy3Z8", 
+                        body: "新サイト設立おめ！！！\nChromebookの制限にも引っかからないし最高だなww" 
+                    }
                 ]
             }
         ];
 
-        // データの読み込み
-        let bbsData = JSON.parse(localStorage.getItem('my_2ch_bbs_data_v3')) || defaultData;
+        // データの読み込み（競合を防ぐためバージョンをv5に変更）
+        let bbsData = JSON.parse(localStorage.getItem('my_2ch_bbs_data_v5')) || defaultData;
         
-        // アクティブなスレッドの初期選択バグを修正
+        // 最初のスレッドのIDを確実にセットする
         let activeThreadId = "";
         if (bbsData && bbsData.length > 0) {
             activeThreadId = bbsData[0].id;
         }
 
-        // 同一人物判定用の記号生成
         function generateUniqueSign(name) {
             const today = new Date().toDateString();
             const userAgent = navigator.userAgent;
@@ -140,7 +149,7 @@
         }
 
         function saveData() {
-            localStorage.setItem('my_2ch_bbs_data_v3', JSON.stringify(bbsData));
+            localStorage.setItem('my_2ch_bbs_data_v5', JSON.stringify(bbsData));
         }
 
         function displayThreads() {
@@ -179,7 +188,6 @@
             if (titleH2) titleH2.textContent = currentThread.title;
             if (resListDiv) resListDiv.innerHTML = '';
 
-            // 500レス制限チェック
             if (currentThread.posts.length >= 500) {
                 if (formArea) formArea.style.display = 'none';
                 if (limitMessage) limitMessage.style.display = 'block';
@@ -188,7 +196,6 @@
                 if (limitMessage) limitMessage.style.display = 'none';
             }
 
-            // 表示処理
             currentThread.posts.forEach((post, index) => {
                 const resDiv = document.createElement('div');
                 resDiv.className = 'res';
@@ -210,10 +217,3 @@
                 if (resListDiv) resListDiv.appendChild(resDiv);
             });
 
-            // ぴったり500に達した場合のアナウンス
-            if (currentThread.posts.length === 500) {
-                const endDiv = document.createElement('div');
-                endDiv.className = 'res';
-                endDiv.innerHTML = `
-                    <div class="res-meta">
-                        <span class="res-num">500</span> ：
