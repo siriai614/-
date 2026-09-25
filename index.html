@@ -5,39 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>お前らの避難所掲示板(仮)</title>
     <style>
-        /* 画面全体の基本設定 */
-        body { background-color: #efefef; color: #000000; font-family: "MS P Gothic", sans-serif; padding: 20px; font-size: 16px; margin: 0; hieght: 100vh; box-sizing: border-box; }
-        .header { border-bottom: 2px solid #ff0000; padding-bottom: 10px; margin-bottom: 15px; }
-        h1 { color: #ff0000; font-size: 26px; margin: 0; }
+        body { background-color: #efefef; color: #000000; font-family: "MS P Gothic", sans-serif; padding: 20px; font-size: 16px; margin: 0; }
+        .header { border-bottom: 2px solid #ff0000; padding-bottom: 10px; margin-bottom: 20px; }
+        h1 { color: #ff0000; font-size: 28px; margin: 0; }
         
-        /* 🔥復活した大好きな画面分割レイアウト */
+        /* スレッド切り替え用の上部タブ */
+        .thread-tabs { margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 5px; }
+        .tab-btn { background: #e0e0e0; border: 1px solid #aaa; padding: 8px 15px; font-size: 14px; cursor: pointer; border-radius: 4px; color: #0000ff; text-decoration: underline; }
+        .tab-btn.active { background: #fff; border-bottom: 1px solid #fff; color: #ff0000; font-weight: bold; text-decoration: none; }
+        
+        /* 横並びの画面分割レイアウト */
         .main-layout { display: flex; gap: 20px; align-items: flex-start; }
         
-        /* 左側：スレッド一覧メニュー */
+        /* 左側：新スレ作成専用サイドバー */
         .sidebar { width: 280px; flex-shrink: 0; background: #f9f9f9; border: 1px solid #ccc; padding: 15px; border-radius: 4px; box-sizing: border-box; }
         .sidebar h3 { margin-top: 0; color: #ff0000; border-bottom: 1px solid #ccc; padding-bottom: 5px; font-size: 16px; }
-        .thread-list { list-style: none; padding: 0; margin: 0 0 20px 0; }
-        .thread-list li { padding: 8px; border-bottom: 1px dashed #ccc; cursor: pointer; color: #0000ff; text-decoration: underline; font-size: 14px; }
-        .thread-list li:hover { background: #e0e0e0; }
-        .thread-list li.active { font-weight: bold; background: #e0e0e0; color: #ff0000; text-decoration: none; }
         
-        /* 右側：コンテンツエリア */
+        /* 右側：書き込みとコンテンツ */
         .content-area { flex: 1; min-width: 0; }
         
-        /* フォームのスタイル */
-        .forms-wrapper { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; }
-        .post-form { background: #e0e0e0; border: 1px solid #aaa; padding: 12px; flex: 1; min-width: 300px; border-radius: 4px; box-sizing: border-box; }
-        .form-group { margin-bottom: 8px; }
-        label { display: inline-block; width: 70px; font-weight: bold; font-size: 14px; }
-        input[type="text"], textarea { width: calc(100% - 80px); padding: 5px; border: 1px solid #999; font-size: 14px; box-sizing: border-box; }
-        textarea { height: 60px; resize: vertical; }
+        .post-form { background: #e0e0e0; border: 1px solid #aaa; padding: 15px; border-radius: 4px; box-sizing: border-box; margin-bottom: 20px; }
+        .form-group { margin-bottom: 10px; }
+        label { display: inline-block; width: 80px; font-weight: bold; }
+        input[type="text"], textarea { width: calc(100% - 90px); padding: 5px; border: 1px solid #999; font-size: 14px; box-sizing: border-box; }
+        textarea { height: 70px; resize: vertical; }
         
-        .submit-btn { background: #ccc; border: 1px solid #666; padding: 4px 15px; font-size: 13px; cursor: pointer; font-weight: bold; }
+        .submit-btn { background: #ccc; border: 1px solid #666; padding: 5px 20px; font-size: 14px; cursor: pointer; font-weight: bold; }
         .submit-btn:hover { background: #bbb; }
         
-        /* 掲示板のレス表示のハコ */
         .thread-box { background: #fff; border: 1px solid #ccc; padding: 20px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .thread-box h2 { margin-top: 0; border-bottom: 2px solid #ccc; padding-bottom: 10px; font-size: 20px; }
+        .thread-box h2 { margin-top: 0; border-bottom: 2px solid #ccc; padding-bottom: 10px; font-size: 22px; }
         
         /* ２ちゃんねる風の緑色 */
         .res { margin-bottom: 20px; line-height: 1.5; border-bottom: 1px dashed #ccc; padding-bottom: 15px; }
@@ -54,20 +51,19 @@
 
     <div class="header">
         <h1>お前らの避難所掲示板(仮)</h1>
-        <p>大好きな「画面分割レイアウト」を、バグのない最強システムで完全復活させました！</p>
+        <p>消えていた初期スレッドを完全に復活させ、バグを直した最新版です！</p>
     </div>
 
-    <!-- 画面分割レイアウト開始 -->
+    <!-- 上部のスレッド切り替えタブ -->
+    <div id="threadTabs" class="thread-tabs"></div>
+
     <div class="main-layout">
         
-        <!-- 左側：サイドバー（スレ一覧と新規作成） -->
+        <!-- 左側：新スレ作成サイドバー -->
         <div class="sidebar">
-            <h3>スレッド一覧</h3>
-            <ul id="threadList" class="thread-list"></ul>
-            
-            <h3 style="margin-top: 25px;">新スレッドを建てる</h3>
+            <h3>新スレッドを建てる</h3>
             <div class="form-group">
-                <input type="text" id="newTitleInput" placeholder="スレのタイトル" style="width: 100%;">
+                <input type="text" id="newTitleInput" placeholder="新しいスレのタイトル" style="width: 100%;">
             </div>
             <div class="form-group">
                 <input type="text" id="newNameInput" placeholder="名前（省略可）" style="width: 100%;" value="名無しさん">
@@ -75,24 +71,22 @@
             <button class="submit-btn" style="width: 100%; background:#ffcccc; border-color:#ff6666;" onclick="createThread()">スレを建てる</button>
         </div>
 
-        <!-- 右側：メインコンテンツ（書き込み欄とスレの中身） -->
+        <!-- 右側：書き込みとスレの中身 -->
         <div class="content-area">
             
-            <div class="forms-wrapper">
-                <!-- 書き込みフォーム -->
-                <div class="post-form">
-                    <h4 style="margin:0 0 8px 0; color:#333;">このスレに書き込む</h4>
-                    <div class="form-group">
-                        <label for="nameInput">名前：</label>
-                        <input type="text" id="nameInput" value="名無しさん" placeholder="名前#パスワード">
-                    </div>
-                    <div class="form-group">
-                        <label for="bodyInput">本文：</label>
-                        <textarea id="bodyInput" placeholder="書き込み内容を入力してください"></textarea>
-                    </div>
-                    <div style="text-align: right;">
-                        <button class="submit-btn" onclick="addPost()">書き込む</button>
-                    </div>
+            <!-- 書き込みフォーム -->
+            <div class="post-form">
+                <h4 style="margin:0 0 10px 0; color:#333;">このスレッドに書き込む</h4>
+                <div class="form-group">
+                    <label for="nameInput">名前：</label>
+                    <input type="text" id="nameInput" value="名無しさん" placeholder="名前#パスワード">
+                </div>
+                <div class="form-group">
+                    <label for="bodyInput">本文：</label>
+                    <textarea id="bodyInput" placeholder="書き込み内容を入力してください"></textarea>
+                </div>
+                <div style="text-align: right;">
+                    <button class="submit-btn" onclick="addPost()">書き込む</button>
                 </div>
             </div>
 
@@ -106,19 +100,21 @@
     </div>
 
     <script>
-        // 初期データ（初期型の最も安定したデータ構造を使用）
-        let threads = [
+        // 🚨バグ対策：古い干渉を完全に断ち切るため、内部の配列変数を新しく作成
+        let myBbsThreads = [
             {
                 title: "【歓迎】ようこそ２ちゃんねる風の避難所へ！ ★1",
+                creator: "管理人",
                 posts: [
-                    { name: "管理人", trip: "◆Ad7B9", date: "2026/09/25(金) 20:00:00", sign: "◆HOST1", body: "大好きな画面分割レイアウトで復活しました！\n初期型のバグらないシステムを合体させてあるので、今度は絶対にエラーになりません。\n\n・レス番号クリックでアンカー(>>)自動入力\n・名前の後に「#パスワード」でトリップ化\n・スレ主は自動で [イッチ] 判定" },
-                    { name: "名無しさん", trip: "", date: "2026/09/25(金) 20:05:00", sign: "◆USER1", body: "うおおおおおこのレイアウト待ってた！！！\n今度はバグらずにスレ建てまくれるな！！" }
+                    { name: "管理人", trip: "◆Ad7B9", date: "2026/09/25(金) 20:00:00", sign: "◆HOST1", body: "大好きなレイアウトを全部合体させました！\nスレッドの切り替えは画面の上のボタンでサクサク動き、左側のサイドバーからはいつでも新しいスレを建てられます。\n\n初期型のバグらない最高精度なので、Chromebookでも100%安全に動きます！" },
+                    { name: "名無しさん", trip: "", date: "2026/09/25(金) 20:05:00", sign: "◆USER1", body: "上のボタンでスレ切り替えるのほんと快適だなww" }
                 ]
             },
             {
-                title: "【開発】制作者へのアドバイス・バグ報告スレ ★1",
+                title: "【開発】制作者へのアドバイス・文句報告スレ ★1",
+                creator: "管理人",
                 posts: [
-                    { name: "管理人", trip: "◆Ad7B9", date: "2026/09/25(金) 20:01:00", sign: "◆HOST1", body: "機能のアイデアや、デザインの感想などはこちらへどうぞ！" }
+                    { name: "管理人", trip: "◆Ad7B9", date: "2026/09/25(金) 20:01:00", sign: "◆HOST1", body: "機能の追加アドバイスや、システムへの文句、デザインの感想はこちらへどうぞ！" }
                 ]
             }
         ];
@@ -152,31 +148,29 @@
             return { name, trip };
         }
 
-        // 画面全体を更新する関数
+        // 画面の更新処理
         function updateScreen() {
-            // 1. 左側サイドバーのスレッド一覧を更新
-            const threadListUl = document.getElementById('threadList');
-            if (threadListUl) {
-                threadListUl.innerHTML = '';
-                threads.forEach((thread, index) => {
-                    const li = document.createElement('li');
-                    li.textContent = `${thread.title} (${thread.posts.length})`;
-                    if (index === currentThreadIndex) {
-                        li.className = 'active';
-                    }
-                    li.onclick = () => {
+            // 1. 画面の上の切り替えタブ（ボタン）を更新
+            const tabsDiv = document.getElementById('threadTabs');
+            if (tabsDiv) {
+                tabsDiv.innerHTML = '';
+                myBbsThreads.forEach((thread, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'tab-btn' + (index === currentThreadIndex ? ' active' : '');
+                    btn.textContent = `${thread.title} (${thread.posts.length})`;
+                    btn.onclick = () => {
                         currentThreadIndex = index;
                         updateScreen();
                     };
-                    threadListUl.appendChild(li);
+                    tabsDiv.appendChild(btn);
                 });
             }
 
-            // 2. 右側の現在のスレタイトルを更新
-            const activeThread = threads[currentThreadIndex];
+            // 2. 現在のスレタイトルを更新
+            const activeThread = myBbsThreads[currentThreadIndex];
             document.getElementById('currentThreadTitle').textContent = activeThread.title;
 
-            // 3. 右側のレス一覧を更新
+            // 3. レス一覧を更新
             const resList = document.getElementById('resList');
             if (resList) {
                 resList.innerHTML = '';
@@ -187,7 +181,7 @@
                     // イッチ判定
                     let itchiHtml = "";
                     const firstPost = activeThread.posts[0];
-                    if (index > 0 && post.name === firstPost.name && post.trip === firstPost.trip) {
+                    if (index > 0 && firstPost && post.name === firstPost.name && post.trip === firstPost.trip) {
                         itchiHtml = ' <span class="itchi-tag">[イッチ]</span>';
                     }
 
@@ -216,3 +210,8 @@
         function getNowDateString() {
             const now = new Date();
             const week = ["日", "月", "火", "水", "木", "金", "土"][now.getDay()];
+            return `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}(${week}) ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+        }
+
+        function addPost() {
+            const nameInput = document.getElementById('nameInput');
