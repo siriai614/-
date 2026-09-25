@@ -5,218 +5,142 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>お前らの避難所掲示板(仮)</title>
     <style>
-        body { background-color: #efefef; color: #000000; font-family: "MS P Gothic", "ヒラギノ角ゴ Pro W3", sans-serif; padding: 20px; font-size: 16px; margin: 0; }
+        body { background-color: #efefef; color: #000000; font-family: "MS P Gothic", sans-serif; padding: 20px; font-size: 16px; margin: 0; }
         .header { border-bottom: 2px solid #ff0000; padding-bottom: 10px; margin-bottom: 20px; }
         h1 { color: #ff0000; font-size: 28px; margin: 0; }
-        
-        .main-layout { display: flex; gap: 20px; margin-top: 20px; }
-        
-        /* 左側：スレッド一覧 */
-        .sidebar { width: 250px; flex-shrink: 0; background: #f9f9f9; border: 1px solid #ccc; padding: 15px; border-radius: 4px; box-sizing: border-box; }
-        .sidebar h3 { margin-top: 0; color: #ff0000; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
-        .thread-list { list-style: none; padding: 0; margin: 0 0 20px 0; }
-        .thread-list li { padding: 8px; border-bottom: 1px dashed #ccc; cursor: pointer; color: #0000ff; text-decoration: underline; font-size: 14px; }
-        .thread-list li:hover { background: #e0e0e0; }
-        .thread-list li.active { font-weight: bold; background: #e0e0e0; color: #ff0000; text-decoration: none; }
-        
-        /* 右側：コンテンツ */
-        .content-area { flex: 1; }
-        
-        .post-form { background: #e0e0e0; border: 1px solid #aaa; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+        .post-form { background: #e0e0e0; border: 1px solid #aaa; padding: 15px; max-width: 600px; margin-bottom: 30px; border-radius: 4px; }
         .form-group { margin-bottom: 10px; }
         label { display: inline-block; width: 80px; font-weight: bold; }
         input[type="text"], textarea { width: calc(100% - 90px); padding: 5px; border: 1px solid #999; font-size: 14px; box-sizing: border-box; }
         textarea { height: 80px; resize: vertical; }
+        .submit-btn { background: #ccc; border: 1px solid #666; padding: 5px 20px; font-size: 14px; cursor: pointer; font-weight: bold; }
+        .submit-btn:hover { background: #bbb; }
+        .thread { background: #fff; border: 1px solid #ccc; padding: 20px; max-width: 800px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
-        .btn { background: #ccc; border: 1px solid #666; padding: 5px 15px; font-size: 14px; cursor: pointer; font-weight: bold; border-radius: 2px; }
-        .btn:hover { background: #bbb; }
-        
-        .thread-box { background: #fff; border: 1px solid #ccc; padding: 20px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        
+        /* ２ちゃんねる風の緑色に変更 */
         .res { margin-bottom: 20px; line-height: 1.5; border-bottom: 1px dashed #ccc; padding-bottom: 15px; }
         .res:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
         .res-meta { color: #228b22; font-weight: bold; }
-        .res-num { color: #228b22; cursor: pointer; text-decoration: underline; }
+        .res-num { color: #228b22; }
         .res-name { color: #228b22; }
-        .itchi-tag { color: #ff0000; font-weight: bold; }
-        .res-body { margin-top: 5px; white-space: pre-wrap; padding-left: 15px; color: #000000; }
-        
-        .limit-over { color: red; font-weight: bold; font-size: 16px; padding: 10px; text-align: center; background: #ffe6e6; border: 1px solid red; border-radius: 4px; }
+        .res-body { margin-top: 5px; white-space: pre-wrap; padding-left: 15px; color: #000000; } /* 本文は読みやすい黒 */
     </style>
 </head>
 <body>
 
     <div class="header">
         <h1>お前らの避難所掲示板(仮)</h1>
-        <p>自動読み込みバグを完全に修正した、100%動く決定版コードです。</p>
+        <p>一番安定している初期型をベースに、緑文字と同一人物判定を追加したコードです。</p>
     </div>
 
-    <div class="main-layout">
-        <div class="sidebar">
-            <h3>スレッド一覧</h3>
-            <ul id="threadList" class="thread-list"></ul>
-            
-            <h3 style="margin-top: 20px;">新スレを建てる</h3>
-            <div class="form-group">
-                <input type="text" id="newThreadTitle" placeholder="スレッドのタイトル" style="width: 100%;">
-            </div>
-            <div class="form-group">
-                <input type="text" id="newThreadName" placeholder="名前（省略可）" style="width: 100%;" value="名無しさん">
-            </div>
-            <button class="btn" style="width: 100%;" onclick="createThread()">スレッド作成</button>
+    <!-- 書き込みフォーム -->
+    <div class="post-form">
+        <div class="form-group">
+            <label for="nameInput">名前：</label>
+            <input type="text" id="nameInput" value="名無しさん">
         </div>
+        <div class="form-group">
+            <label for="bodyInput">本文：</label>
+            <textarea id="bodyInput" placeholder="書き込み内容を入力してください"></textarea>
+        </div>
+        <div style="text-align: right;">
+            <button class="submit-btn" onclick="addPost()">書き込む</button>
+        </div>
+    </div>
 
-        <div class="content-area">
-            <!-- 書き込みフォーム -->
-            <div class="post-form" id="formArea">
-                <div class="form-group">
-                    <label for="nameInput">名前：</label>
-                    <input type="text" id="nameInput" value="名無しさん">
-                </div>
-                <div class="form-group">
-                    <label for="bodyInput">本文：</label>
-                    <textarea id="bodyInput" placeholder="書き込み内容を入力してください"></textarea>
-                </div>
-                <div style="text-align: right;">
-                    <button class="btn" onclick="addPost()">書き込む</button>
-                </div>
-            </div>
-            <div id="limitMessage" class="limit-over" style="display: none; margin-bottom: 20px;">
-                このスレッドは総会話数（500）に達したため書き込めません。
-            </div>
-
-            <div class="thread-box">
-                <h2 id="currentThreadTitle">スレッドがありません</h2>
-                <div id="resList"></div>
-            </div>
+    <!-- レス一覧 -->
+    <div class="thread">
+        <h2>【本スレ】雑談・アドバイス総合スレッド ★1</h2>
+        <div id="resList">
+            <!-- ここに書き込みが追加されます -->
         </div>
     </div>
 
     <script>
-        // 最初から用意されている2つの固定スレッドデータ
-        const defaultData = [
-            {
-                id: "thread_welcome_2ch",
-                title: "【歓迎】ようこそ２ちゃんねる風の避難所へ！ ★1",
-                creatorName: "管理人 ★",
-                posts: [
-                    { 
-                        name: "管理人 ★", 
-                        date: "2026/09/25(金) 20:00:00", 
-                        uniqueSign: "◆Ad7B9", 
-                        body: "自分専用の匿名掲示板へようこそ！\n\n・1スレ最大500レス制限\n・投稿者が同じか分かる「独自記号」\n・スレ主がすぐ分かる「[イッチ]」タグ\n・レス番号クリックでの「アンカー(>>)」自動入力\n\nこれらの機能を搭載しています。自由に楽しんでいってね！" 
-                    },
-                    { 
-                        name: "名無しさん", 
-                        date: "2026/09/25(金) 20:05:00", 
-                        uniqueSign: "◆Xy3Z8", 
-                        body: "新サイト設立おめ！！！\nChromebookの制限にも引っかからないし最高だなww" 
-                    }
-                ]
-            },
-            {
-                id: "thread_advice_2ch",
-                title: "【開発】制作者へのアドバイス・バグ報告スレ ★1",
-                creatorName: "管理人 ★",
-                posts: [
-                    {
-                        name: "管理人 ★",
-                        date: "2026/09/25(金) 20:01:00",
-                        uniqueSign: "◆Ad7B9",
-                        body: "このウェブサイトの制作者（あなた）への応援メッセージや、機能の追加アドバイス、バグ報告をするスレッドです！\n「こんな機能が欲しい！」「ここを直してほしい」など、何でも書き込んでください。"
-                    }
-                ]
-            }
+        // 初期の歓迎＆アドバイスメッセージ
+        let posts = [
+            { name: "管理人 ★", date: "2026/09/25(金) 20:00:00", sign: "◆Ad7B9", body: "２ちゃんねる風の掲示板を開設しました！\n初期型の最も安定したシステムです。\nアドバイスや雑談など、自由に書き込んでいってください！" },
+            { name: "名無しさん", date: "2026/09/25(金) 20:05:00", sign: "◆Xy3Z8", body: "新スレおつ！やっぱりシンプルなこれが一番バグらなくて最高だなww" }
         ];
 
-        // データの読み込み（古いバグデータを完全に上書きするために、保存キーをv9に変更）
-        let bbsData = JSON.parse(localStorage.getItem('my_2ch_bbs_data_v9')) || defaultData;
-        
-        // 🚨バグ修正：リストの最初の要素(0番目)から正しくIDを取得する
-        let activeThreadId = "";
-        if (bbsData && bbsData.length > 0) {
-            activeThreadId = bbsData[0].id;
-        }
-
-        function generateUniqueSign(name) {
-            const today = new Date().toDateString();
-            const userAgent = navigator.userAgent;
-            const seed = name + today + userAgent;
+        // 誰が書いたか特定する記号を自動で作る関数
+        function getUniqueSign(name) {
+            const seed = name + navigator.userAgent;
             let hash = 0;
             for (let i = 0; i < seed.length; i++) {
                 hash = seed.charCodeAt(i) + ((hash << 5) - hash);
             }
-            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             let sign = "◆";
             for (let i = 0; i < 5; i++) {
-                const index = Math.abs((hash >> (i * 6)) & 0x3F) % chars.length;
-                sign += chars[index];
+                sign += chars[Math.abs((hash >> (i * 4)) % chars.length)];
             }
             return sign;
         }
 
-        function getFormattedDate() {
-            const now = new Date();
-            const week = ["日", "月", "火", "水", "木", "金", "土"][now.getDay()];
-            return `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}(${week}) ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-        }
-
-        function saveData() {
-            localStorage.setItem('my_2ch_bbs_data_v9', JSON.stringify(bbsData));
-        }
-
-        function displayThreads() {
-            const threadListUl = document.getElementById('threadList');
-            if (!threadListUl) return;
-            threadListUl.innerHTML = '';
-
-            bbsData.forEach((thread) => {
-                const li = document.createElement('li');
-                li.textContent = `${thread.title} (${thread.posts.length})`;
-                if (thread.id === activeThreadId) {
-                    li.className = 'active';
-                }
-                li.onclick = () => {
-                    activeThreadId = thread.id;
-                    displayThreads();
-                    displayPosts();
-                };
-                threadListUl.appendChild(li);
-            });
-        }
-
+        // 画面に書き込みを表示する
         function displayPosts() {
-            const currentThread = bbsData.find(t => t.id === activeThreadId);
-            const titleH2 = document.getElementById('currentThreadTitle');
-            const resListDiv = document.getElementById('resList');
-            const formArea = document.getElementById('formArea');
-            const limitMessage = document.getElementById('limitMessage');
+            const resList = document.getElementById('resList');
+            if (!resList) return;
+            resList.innerHTML = '';
 
-            if (!currentThread) {
-                if (titleH2) titleH2.textContent = "スレッドがありません";
-                if (resListDiv) resListDiv.innerHTML = '';
-                return;
-            }
-
-            if (titleH2) titleH2.textContent = currentThread.title;
-            if (resListDiv) resListDiv.innerHTML = '';
-
-            if (currentThread.posts.length >= 500) {
-                if (formArea) formArea.style.display = 'none';
-                if (limitMessage) limitMessage.style.display = 'block';
-            } else {
-                if (formArea) formArea.style.display = 'block';
-                if (limitMessage) limitMessage.style.display = 'none';
-            }
-
-            currentThread.posts.forEach((post, index) => {
+            posts.forEach((post, index) => {
                 const resDiv = document.createElement('div');
                 resDiv.className = 'res';
                 
-                let itchiHtml = "";
-                if (post.name === currentThread.creatorName && index !== 0) {
-                    itchiHtml = ' <span class="itchi-tag">[イッチ]</span>';
-                }
-
                 resDiv.innerHTML = `
                     <div class="res-meta">
+                        <span class="res-num">${index + 1}</span> ：
+                        <span class="res-name">${post.name}</span> ：
+                        <span class="res-date">${post.date}</span> ：
+                        <span class="res-sign">記号:${post.sign}</span>
+                    </div>
+                    <div class="res-body">${post.body}</div>
+                `;
+                resList.appendChild(resDiv);
+            });
+        }
+
+        // ボタンを押したときに書き込みを追加する
+        function addPost() {
+            const nameInput = document.getElementById('nameInput');
+            const bodyInput = document.getElementById('bodyInput');
+
+            const name = nameInput.value.trim() || "名無しさん";
+            const body = bodyInput.value.trim();
+
+            if (!body) {
+                alert("本文を入力してください！");
+                return;
+            }
+
+            // 日時を綺麗に作る
+            const now = new Date();
+            const week = ["日", "月", "火", "水", "木", "金", "土"][now.getDay()];
+            const dateStr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}(${week}) ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+
+            // 500レス制限のチェック
+            if (posts.length >= 500) {
+                alert("総会話数が500に達したため、これ以上書き込めません！");
+                return;
+            }
+
+            // データを追加
+            posts.push({ 
+                name: name, 
+                date: dateStr, 
+                sign: getUniqueSign(name), 
+                body: body 
+            });
+
+            // 入力欄をクリアして画面を更新
+            bodyInput.value = '';
+            displayPosts();
+        }
+
+        // 最初にページを開いたときに実行
+        displayPosts();
+    </script>
+
+</body>
+</html>
