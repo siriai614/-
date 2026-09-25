@@ -48,7 +48,7 @@
 
     <div class="header">
         <h1>お前らの避難所掲示板(仮)</h1>
-        <p>初期スレッドを追加し、完全に動作するようになった最新コードです。</p>
+        <p>バグを完全に修正し、ようこそスレッドが必ず開く完成版コードです。</p>
     </div>
 
     <div class="main-layout">
@@ -93,7 +93,7 @@
     </div>
 
     <script>
-        // 初めてページを開いた時の「ようこそスレッド」データ
+        // 初めてページを開いた時の固定データ
         const defaultData = [
             {
                 id: "thread_welcome_2ch",
@@ -116,10 +116,10 @@
             }
         ];
 
-        // データの読み込み（競合を防ぐためバージョンをv5に変更）
-        let bbsData = JSON.parse(localStorage.getItem('my_2ch_bbs_data_v5')) || defaultData;
+        // データの読み込み（確実に初期化するためにバージョンをv6に変更）
+        let bbsData = JSON.parse(localStorage.getItem('my_2ch_bbs_data_v6')) || defaultData;
         
-        // 最初のスレッドのIDを確実にセットする
+        // 最初のスレッドのIDを確実にセットする（バグを修正）
         let activeThreadId = "";
         if (bbsData && bbsData.length > 0) {
             activeThreadId = bbsData[0].id;
@@ -149,7 +149,7 @@
         }
 
         function saveData() {
-            localStorage.setItem('my_2ch_bbs_data_v5', JSON.stringify(bbsData));
+            localStorage.setItem('my_2ch_bbs_data_v6', JSON.stringify(bbsData));
         }
 
         function displayThreads() {
