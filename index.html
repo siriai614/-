@@ -3,218 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>お前らの避難所掲示板(仮)</title>
+    <title>Eテレ(笑)（仮）</title>
     <style>
-        /* あなたが大好きな、あの画面分割レイアウト（2カラム） */
-        body { background-color: #efefef; color: #000000; font-family: "MS P Gothic", sans-serif; padding: 20px; font-size: 16px; margin: 0; }
-        .header { border-bottom: 2px solid #ff0000; padding-bottom: 10px; margin-bottom: 20px; }
-        h1 { color: #ff0000; font-size: 28px; margin: 0; }
+        /* 全体設計：モダンレトロな2カラムレイアウト */
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; background-color: #f0f2f5; color: #333; font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", "Hiragino Kaku Gothic ProN", "Sans-Serif"; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* 画面分割レイアウトの土台 */
-        .main-layout { display: flex; gap: 20px; align-items: flex-start; }
+        /* トップヘッダー */
+        .top-navbar { background-color: #1a1a1a; color: #fff; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-shrink: 0; }
+        .top-navbar h1 { margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 1px; color: #38a169; }
+        .user-id-badge { background-color: #2d3748; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-family: monospace; font-weight: bold; }
+        .user-id-badge span { color: #4299e1; }
+
+        /* メインコンテナ */
+        .forum-container { flex: 1; display: flex; overflow: hidden; }
+
+        /* 左側カラム：スレッドナビゲーション */
+        .sidebar-menu { width: 300px; background: #ffffff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; flex-shrink: 0; }
+        .menu-section-title { background-color: #f7fafc; padding: 10px 15px; font-size: 12px; font-weight: bold; color: #718096; border-bottom: 1px solid #edf2f7; text-transform: uppercase; letter-spacing: 0.5px; }
+        .menu-section-title.pinned-title { background-color: #fffaf0; color: #dd6b20; border-bottom-color: #feebc8; }
+        .thread-navigation-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; }
+        .thread-nav-item { padding: 14px 15px; border-bottom: 1px solid #edf2f7; cursor: pointer; transition: background 0.2s; position: relative; }
+        .thread-nav-item:hover { background-color: #f7fafc; }
+        .thread-nav-item.active-thread { background-color: #ebf8ff; border-left: 4px solid #38a169; }
+        .thread-nav-item.pinned-thread { background-color: #fffaf0; }
+        .thread-nav-item.pinned-thread.active-thread { background-color: #feebc8; border-left-color: #dd6b20; }
+        .nav-item-title { font-size: 13px; font-weight: bold; color: #2d3748; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .nav-item-meta { font-size: 11px; color: #a0aec0; margin-top: 6px; font-weight: bold; }
+        .nav-item-meta.closed-status { color: #e53e3e; }
+
+        /* 新スレ作成フォーム（サイドバー下部） */
+        .create-thread-box { padding: 15px; border-top: 1px solid #e2e8f0; background-color: #f7fafc; }
+        .create-thread-box h4 { margin: 0 0 10px 0; font-size: 13px; color: #4a5568; }
+        .form-input-text { width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px; margin-bottom: 8px; outline: none; }
+        .form-input-text:focus { border-color: #38a169; }
+        .action-button { width: 100%; padding: 8px; border-radius: 4px; border: none; font-size: 12px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        .btn-create { background-color: #e6fffa; color: #234e52; border: 1px solid #b2f5ea; }
+        .btn-create:hover { background-color: #b2f5ea; }
+
+        /* 右側カラム：メインビュー */
+        .main-content-view { flex: 1; display: flex; flex-direction: column; background-color: #f8fafc; overflow: hidden; }
+        .current-thread-header { background-color: #ffffff; padding: 15px 20px; border-bottom: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.02); flex-shrink: 0; }
+        .current-thread-header h2 { margin: 0; font-size: 16px; font-weight: 800; color: #1a202c; }
+
+        /* 📢 警告表示エリア */
+        .system-alert-banner { background-color: #fffaf0; border-left: 4px solid #dd6b20; color: #dd6b20; padding: 12px 20px; font-size: 13px; font-weight: bold; flex-shrink: 0; display: none; }
+
+        /* レス表示スクロールエリア */
+        .posts-scroll-viewport { flex: 1; overflow-y: auto; padding: 20px; }
+        .post-card-item { background-color: #ffffff; border: 1px solid #e2e8f0; padding: 15px; border-radius: 6px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); max-width: 800px; position: relative; }
         
-        /* 左側：大好きな失敗した時のスレッド一覧メニュー */
-        .sidebar { width: 280px; flex-shrink: 0; background: #f9f9f9; border: 1px solid #ccc; padding: 15px; border-radius: 4px; box-sizing: border-box; }
-        .sidebar h3 { margin-top: 0; color: #ff0000; border-bottom: 1px solid #ccc; padding-bottom: 5px; font-size: 16px; }
-        .thread-list { list-style: none; padding: 0; margin: 0 0 20px 0; }
-        .thread-list li { padding: 8px; border-bottom: 1px dashed #ccc; cursor: pointer; color: #0000ff; text-decoration: underline; font-size: 14px; }
-        .thread-list li:hover { background: #e0e0e0; }
-        .thread-list li.active { font-weight: bold; background: #e0e0e0; color: #ff0000; text-decoration: none; }
+        /* ２ちゃんねる風の姓名緑指定 */
+        .post-header-metadata { font-size: 12px; font-family: monospace; font-weight: bold; color: #2f855a; margin-bottom: 8px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .post-index-num { color: #2f855a; }
+        .post-user-name { color: #2f855a; }
+        .post-timestamp { color: #718096; }
+        .post-user-id { color: #4a5568; font-weight: normal; cursor: pointer; text-decoration: underline; }
+        .post-user-id:hover { color: #e53e3e; }
+        .creator-itchi-badge { background-color: #c6f6d5; color: #22543d; font-size: 10px; padding: 1px 5px; border-radius: 3px; border: 1px solid #9ae6b4; font-weight: 900; }
+
+        /* AA切り替え用手動トグルボタン */
+        .aa-toggle-btn { background: #edf2f7; border: 1px solid #cbd5e0; color: #4a5568; font-size: 10px; padding: 2px 6px; border-radius: 4px; cursor: pointer; margin-left: auto; font-family: sans-serif; font-weight: bold; }
+        .aa-toggle-btn:hover { background: #e2e8f0; }
+        .aa-toggle-btn.aa-active { background: #dd6b20; color: #fff; border-color: #dd6b20; }
+
+        /* あぼーん表示のスタイル */
+        .abone-text { color: #a0aec0; font-style: italic; font-weight: bold; font-size: 13px; }
+
+        /* 本文（通常モード） */
+        .post-body-content { font-size: 14px; line-height: 1.6; color: #2d3748; white-space: pre-wrap; word-break: break-all; padding-left: 4px; }
         
-        /* 右側：メインコンテンツエリア */
-        .content-area { flex: 1; min-width: 0; }
+        /* AA自動調節モード */
+        .post-body-content.aa-mode-active, .welcome-aa-box { font-family: "Mona", "MS PGothic", "ＭＳ Ｐゴシック", "MS P GOTHIC", "IPAMonaPGothic", sans-serif; font-size: 16px; line-height: 1.2; letter-spacing: 0; word-break: normal; overflow-x: auto; white-space: pre; background-color: #fafafa; border: 1px inset #edf2f7; padding: 10px; border-radius: 4px; max-width: 100%; }
         
-        /* フォームのスタイル */
-        .post-form { background: #e0e0e0; border: 1px solid #aaa; padding: 15px; border-radius: 4px; box-sizing: border-box; margin-bottom: 20px; }
-        .form-group { margin-bottom: 10px; }
-        label { display: inline-block; width: 80px; font-weight: bold; }
-        input[type="text"], textarea { width: calc(100% - 90px); padding: 5px; border: 1px solid #999; font-size: 14px; box-sizing: border-box; }
-        textarea { height: 70px; resize: vertical; }
-        
-        .submit-btn { background: #ccc; border: 1px solid #666; padding: 5px 20px; font-size: 14px; cursor: pointer; font-weight: bold; }
-        .submit-btn:hover { background: #bbb; }
-        
-        /* レスを表示する白いボックス */
-        .thread-box { background: #fff; border: 1px solid #ccc; padding: 20px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .thread-box h2 { margin-top: 0; border-bottom: 2px solid #ccc; padding-bottom: 10px; font-size: 22px; }
-        
-        /* ２ちゃんねる風の緑色 */
-        .res { margin-bottom: 20px; line-height: 1.5; border-bottom: 1px dashed #ccc; padding-bottom: 15px; }
-        .res:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-        .res-meta { color: #228b22; font-weight: bold; }
-        .res-num { color: #228b22; cursor: pointer; text-decoration: underline; }
-        .res-name { color: #228b22; }
-        .res-trip { color: #ff00ff; font-weight: normal; }
-        .itchi-tag { color: #ff0000; font-weight: bold; }
-        .res-body { margin-top: 5px; white-space: pre-wrap; padding-left: 15px; color: #000000; }
+        /* ウェルカム画面のスタイル */
+        .welcome-aa-box { background-color: transparent; border: none; padding: 40px; color: #4a5568; font-weight: bold; line-height: 1.3; }
+
+        /* アンカーと自動画像 */
+        .anchor-text-link { color: #3182ce; font-weight: bold; text-decoration: underline; cursor: pointer; }
+        .embedded-media-image { max-width: 320px; max-height: 240px; display: block; margin-top: 10px; border: 1px solid #e2e8f0; padding: 3px; background: #fff; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+
+        /* 最下部書き込みフォーム */
+        .bottom-reply-form { background-color: #ffffff; border-top: 1px solid #e2e8f0; padding: 20px; box-shadow: 0 -2px 10px rgba(0,0,0,0.03); flex-shrink: 0; }
+        .reply-form-inner { max-width: 800px; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+        .input-name-field { width: 220px; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px; font-weight: bold; color: #2f855a; outline: none; background-color: #fafafa; }
+        .input-name-field:focus { border-color: #38a169; background-color: #fff; }
+        .reply-textarea-wrapper { display: flex; gap: 12px; }
+        .input-body-textarea { flex: 1; height: 64px; padding: 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px; resize: none; outline: none; }
+        .input-body-textarea:focus { border-color: #38a169; }
+        .btn-submit-reply { background-color: #38a169; color: #fff; padding: 0 24px; border: none; border-radius: 4px; font-size: 13px; font-weight: bold; cursor: pointer; transition: background 0.2s; height: 64px; }
+        .btn-submit-reply:hover { background-color: #2f855a; }
+        .btn-submit-reply:disabled { background-color: #cbd5e0; color: #a0aec0; cursor: not-allowed; }
+
+        /* フォームの終了メッセージ */
+        .thread-closed-msg { background-color: #fff5f5; border: 1px solid #fed7d7; color: #c53030; padding: 15px; border-radius: 4px; font-size: 13px; font-weight: bold; text-align: center; }
+
+        /* ⚓ アンカー追跡ポップアップ */
+        .hover-preview-popup { position: absolute; background-color: #fffaf0; border: 1px solid #cbd5e0; padding: 12px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 9999; font-size: 13px; max-width: 380px; display: none; pointer-events: none; border-left: 4px solid #38a169; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>お前らの避難所掲示板(仮)</h1>
-        <p>間違っていたゴミコードを完全に破壊し、大好きな画面分割で100%動くようにした確定版です！</p>
+    <!-- ナビゲーションバー（Eテレ(笑)（仮）へ変更） -->
+    <div class="top-navbar">
+        <h1>Eテレ(笑)（仮）</h1>
+        <div class="user-id-badge">DAILY_ENCRYPTED_ID: <span id="myIdDisplay">--------</span></div>
     </div>
 
-    <!-- 2カラム画面分割レイアウトの開始 -->
-    <div class="main-layout">
+    <!-- メインレイアウト -->
+    <div class="forum-container">
         
-        <!-- 左側：サイドバー（スレ一覧 ＆ 新スレ作成） -->
-        <div class="sidebar">
-            <h3>スレッド一覧</h3>
-            <ul id="sidebarThreadList" class="thread-list"></ul>
+        <!-- 左カラム：ナビゲーション＆スレ建て -->
+        <div class="sidebar-menu">
+            <div class="menu-section-title pinned-title">📌 固定スレッド</div>
+            <ul id="pinnedThreadsView" class="thread-navigation-list"></ul>
+
+            <div class="menu-section-title">📄 一般スレッド</div>
+            <ul id="generalThreadsView" class="thread-navigation-list"></ul>
             
-            <h3 style="margin-top: 25px;">新スレッドを建てる</h3>
-            <div class="form-group">
-                <input type="text" id="newThreadTitle" placeholder="新しいスレのタイトル" style="width: 100%;">
+            <div class="create-thread-box">
+                <h4>新スレッドを設立する</h4>
+                <input type="text" id="txNewThreadTitle" class="form-input-text" placeholder="スレッドのタイトルを入力">
+                <input type="text" id="txNewThreadName" class="form-input-text" placeholder="スレ主の名前（初期値：名無しさん）">
+                <button class="action-button btn-create" onclick="execCreateThread()">新規スレッド作成</button>
             </div>
-            <div class="form-group">
-                <input type="text" id="newThreadName" placeholder="名前（省略可）" style="width: 100%;" value="名無しさん">
-            </div>
-            <button class="submit-btn" style="width: 100%; background:#ffcccc; border-color:#ff6666;" onclick="createNewThreadBtn()">スレを建てる</button>
         </div>
 
-        <!-- 右側：メインコンテンツ（書き込み欄 ＆ コメント一覧） -->
-        <div class="content-area">
+        <!-- 右カラム：スレッドビュー -->
+        <div class="main-content-view">
             
-            <!-- 書き込みフォーム -->
-            <div class="post-form">
-                <h4 style="margin:0 0 10px 0; color:#333;">このスレッドに書き込む</h4>
-                <div class="form-group">
-                    <label for="postName">名前：</label>
-                    <input type="text" id="postName" value="名無しさん" placeholder="名前#パスワード">
-                </div>
-                <div class="form-group">
-                    <label for="postBody">本文：</label>
-                    <textarea id="postBody" placeholder="書き込み内容を入力してください"></textarea>
-                </div>
-                <div style="text-align: right;">
-                    <button class="submit-btn" onclick="addNewPostBtn()">書き込む</button>
-                </div>
+            <!-- スレタイエリア -->
+            <div class="current-thread-header">
+                <h2 id="currentTitleView">避難所へようこそ！</h2>
             </div>
 
-            <!-- 現在選ばれているスレッドのレス一覧 -->
-            <div class="thread-box">
-                <h2 id="displayTitle">読み込み中...</h2>
-                <div id="displayResList"></div>
-            </div>
-            
-        </div>
-    </div>
-
-    <script>
-        // 🚨完全に新しく設計し直した、絶対に壊れない固定スレッドデータ構造
-        let finalBbsData = [
-            {
-                title: "【歓迎】ようこそ２ちゃんねる風の避難所へ！ ★1",
-                posts: [
-                    { name: "管理人", trip: "◆Ad7B9", date: "2026/09/25(金) 20:00:00", sign: "◆HOST1", body: "大好きな画面分割レイアウトで、今度こそ完全に復活しました！\n\nプログラムが途中で止まる原因だったバグを100%叩き潰しました。\n左のメニューに最初からスレが並んでおり、新スレも一瞬で追加されます！" },
-                    { name: "名無しさん", trip: "", date: "2026/09/25(金) 20:05:00", sign: "◆USER1", body: "やっと直ったか！やっぱりこのレイアウトが最高だなww" }
-                ]
-            },
-            {
-                title: "【開発】制作者へのアドバイス・文句報告スレ ★1",
-                posts: [
-                    { name: "管理人", trip: "◆Ad7B9", date: "2026/09/25(金) 20:01:00", sign: "◆HOST1", body: "システムへの文句、アドバイスなどはこちらへどうぞ！バシバシ書き込んでください。" }
-                ]
-            }
-        ];
-
-        // 最初は「0番目（歓迎スレ）」を強制的に開く
-        let currentActiveIndex = 0;
-
-        // トリップ用の暗号ハッシュ生成
-        function makeCryptoHash(str, len) {
-            let hash = 0;
-            for (let i = 0; i < str.length; i++) {
-                hash = str.charCodeAt(i) + ((hash << 5) - hash);
-            }
-            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            let result = "◆";
-            for (let i = 0; i < len; i++) {
-                result += chars[Math.abs((hash >> (i * 4)) % chars.length)];
-            }
-            return result;
-        }
-
-        // 名前とトリップの分離
-        function getParsedNameAndTrip(inputName) {
-            let name = inputName;
-            let trip = "";
-            const idx = inputName.indexOf('#');
-            if (idx !== -1) {
-                name = inputName.substring(0, idx) || "名無しさん";
-                const password = inputName.substring(idx + 1);
-                if (password) {
-                    trip = makeCryptoHash(password, 6);
-                }
-            }
-            return { name, trip };
-        }
-
-        // 🚨間違っていたゴミコードをすべて消去した、正しい描画関数
-        function renderBbsContent() {
-            // 1. 左側のスレッド一覧を描画
-            const sidebarUl = document.getElementById('sidebarThreadList');
-            if (sidebarUl) {
-                sidebarUl.innerHTML = '';
-                finalBbsData.forEach((thread, index) => {
-                    const li = document.createElement('li');
-                    li.textContent = `${thread.title} (${thread.posts.length})`;
-                    if (index === currentActiveIndex) {
-                        li.className = 'active';
-                    }
-                    li.onclick = function() {
-                        currentActiveIndex = index;
-                        renderBbsContent();
-                    };
-                    sidebarUl.appendChild(li);
-                });
-            }
-
-            // 2. 右側の現在のスレタイトルとレス一覧を描画
-            const targetThread = finalBbsData[currentActiveIndex];
-            const titleH2 = document.getElementById('displayTitle');
-            const resListDiv = document.getElementById('displayResList');
-
-            if (titleH2 && targetThread) {
-                titleH2.textContent = targetThread.title;
-            }
-            
-            if (resListDiv && targetThread) {
-                resListDiv.innerHTML = '';
-                targetThread.posts.forEach((post, index) => {
-                    const resDiv = document.createElement('div');
-                    resDiv.className = 'res';
-                    
-                    let itchiTagHtml = "";
-                    const firstRes = targetThread.posts[0]; // 🚨ここにあった間違っていた書き方を完全に修正！
-                    if (index > 0 && firstRes && post.name === firstRes.name && post.trip === firstRes.trip) {
-                        itchiTagHtml = ' <span class="itchi-tag">[イッチ]</span>';
-                    }
-
-                    resDiv.innerHTML = `
-                        <div class="res-meta">
-                            <span class="res-num" onclick="clickResNumLink(${index + 1})">${index + 1}</span> ：
-                            <span class="res-name">${post.name}</span><span class="res-trip">${post.trip}</span>${itchiTagHtml} ：
-                            <span class="res-date">${post.date}</span> ：
-                            <span class="res-sign">記号:${post.sign}</span>
-                        </div>
-                        <div class="res-body">${post.body}</div>
-                    `;
-                    resListDiv.appendChild(resDiv);
-                });
-            }
-        }
-
-        function clickResNumLink(num) {
-            const bodyTxt = document.getElementById('postBody');
-            if (bodyTxt) {
-                bodyTxt.value = `>>${num}\n` + bodyTxt.value;
-                bodyTxt.focus();
-            }
-        }
-
-        function getBbsTimeStr() {
-            const d = new Date();
-            const w = ["日", "月", "火", "水", "木", "金", "土"][d.getDay()];
+            <!-- 📢 警告バナーエリア -->
