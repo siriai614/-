@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>お前らの避難所掲示板(仮)</title>
+    <style>
+        body { background-color: #efefef; color: #000000; font-family: "MS P Gothic", sans-serif; padding: 20px; font-size: 16px; margin: 0; }
+        .header { border-bottom: 2px solid #ff0000; padding-bottom: 10px; margin-bottom: 20px; }
+        h1 { color: #ff0000; font-size: 28px; margin: 0; }
+        .post-form { background: #e0e0e0; border: 1px solid #aaa; padding: 15px; max-width: 600px; margin-bottom: 30px; border-radius: 4px; }
+        .form-group { margin-bottom: 10px; }
+        label { display: inline-block; width: 80px; font-weight: bold; }
+        input[type="text"], textarea { width: calc(100% - 90px); padding: 5px; border: 1px solid #999; font-size: 14px; box-sizing: border-box; }
+        textarea { height: 80px; resize: vertical; }
+        .submit-btn { background: #ccc; border: 1px solid #666; padding: 5px 20px; font-size: 14px; cursor: pointer; font-weight: bold; }
+        .submit-btn:hover { background: #bbb; }
+        .thread { background: #fff; border: 1px solid #ccc; padding: 20px; max-width: 800px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .res { margin-bottom: 20px; line-height: 1.5; border-bottom: 1px dashed #ccc; padding-bottom: 15px; }
+        .res:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .res-meta { color: #228b22; font-weight: bold; }
+        .res-num { color: #ff0000; }
+        .res-name { color: #0000ff; }
+        .res-body { margin-top: 5px; white-space: pre-wrap; padding-left: 15px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>お前らの避難所掲示板(仮)</h1>
+        <p>誰でも匿名で書き込める、懐かしい雰囲気の掲示板です。</p>
+    </div>
+
+    <!-- 書き込みフォーム -->
+    <div class="post-form">
+        <div class="form-group">
+            <label for="nameInput">名前：</label>
+            <input type="text" id="nameInput" placeholder="名無しさん" value="名無しさん">
+        </div>
+        <div class="form-group">
+            <label for="bodyInput">本文：</label>
+            <textarea id="bodyInput" placeholder="書き込み内容を入力してください"></textarea>
+        </div>
+        <div style="text-align: right;">
+            <button class="submit-btn" onclick="addPost()">書き込む</button>
+        </div>
+    </div>
+
+    <!-- レス（書き込み）一覧 -->
+    <div class="thread">
+        <h2>【本スレ】雑談スレッド ★1</h2>
+        <div id="resList">
+            <!-- ここに書き込みが追加されます -->
+        </div>
+    </div>
+
+    <script>
+        // 最初のサンプルデータ
+        let posts = [
+            { name: "管理人 ★", date: "2026/09/25(金) 20:00:00", body: "２ちゃんねる風の掲示板を開設しました！\nマナーを守って楽しく雑談してください。" },
+            { name: "名無しさん", date: "2026/09/25(金) 20:05:23", body: "新スレおつ\nChromebookからでも普通に見れるなこれwww" }
+        ];
+
+        // 画面に書き込みを映す関数
+        function displayPosts() {
+            const resList = document.getElementById('resList');
+            resList.innerHTML = '';
+
+            posts.forEach((post, index) => {
+                const resDiv = document.createElement('div');
+                resDiv.className = 'res';
+                
+                resDiv.innerHTML = `
+                    <div class="res-meta">
+                        <span class="res-num">${index + 1}</span> ：
+                        <span class="res-name">${post.name}</span> ：
+                        <span class="res-date">${post.date}</span>
+                    </div>
+                    <div class="res-body">${post.body}</div>
+                `;
+                resList.appendChild(resDiv);
+            });
+        }
+
+        // 新しい書き込みを追加する関数
+        function addPost() {
+            const nameInput = document.getElementById('nameInput');
+            const bodyInput = document.getElementById('bodyInput');
+
+            const name = nameInput.value.trim() || "名無しさん";
+            const body = bodyInput.value.trim();
+
+            if (!body) {
+                alert("本文を入力してください！");
+                return;
+            }
+
+            // 現在の日時を取得
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const week = ["日", "月", "火", "水", "木", "金", "土"][now.getDay()];
+            const dateStr = `${year}/${month}/${day}(${week}) ${hours}:${minutes}:${seconds}`;
+
+            // データを追加
+            posts.push({ name: name, date: dateStr, body: body });
+
+            // 入力欄をクリア
+            bodyInput.value = '';
+
+            // 再表示
+            displayPosts();
+        }
+
+        // ページを開いたときに書き込みを表示
+        displayPosts();
+    </script>
+
+</body>
+</html>
