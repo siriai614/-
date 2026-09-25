@@ -8,62 +8,106 @@
         body { background-color: #efefef; color: #000000; font-family: "MS P Gothic", sans-serif; padding: 20px; font-size: 16px; margin: 0; }
         .header { border-bottom: 2px solid #ff0000; padding-bottom: 10px; margin-bottom: 20px; }
         h1 { color: #ff0000; font-size: 28px; margin: 0; }
-        .post-form { background: #e0e0e0; border: 1px solid #aaa; padding: 15px; max-width: 600px; margin-bottom: 30px; border-radius: 4px; }
+        
+        /* スレッド切り替えタブのスタイル */
+        .thread-tabs { margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 5px; }
+        .tab-btn { background: #e0e0e0; border: 1px solid #aaa; padding: 8px 15px; font-size: 14px; cursor: pointer; border-radius: 4px; color: #0000ff; text-decoration: underline; }
+        .tab-btn.active { background: #fff; border-bottom: 1px solid #fff; color: #ff0000; font-weight: bold; text-decoration: none; }
+        
+        /* フォームのレイアウト */
+        .forms-container { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 30px; }
+        .post-form { background: #e0e0e0; border: 1px solid #aaa; padding: 15px; width: 100%; max-width: 500px; border-radius: 4px; box-sizing: border-box; }
         .form-group { margin-bottom: 10px; }
         label { display: inline-block; width: 80px; font-weight: bold; }
         input[type="text"], textarea { width: calc(100% - 90px); padding: 5px; border: 1px solid #999; font-size: 14px; box-sizing: border-box; }
         textarea { height: 80px; resize: vertical; }
+        
         .submit-btn { background: #ccc; border: 1px solid #666; padding: 5px 20px; font-size: 14px; cursor: pointer; font-weight: bold; }
         .submit-btn:hover { background: #bbb; }
+        
         .thread { background: #fff; border: 1px solid #ccc; padding: 20px; max-width: 800px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
-        /* ２ちゃんねる風の緑色に変更 */
+        /* ２ちゃんねる風の緑色 */
         .res { margin-bottom: 20px; line-height: 1.5; border-bottom: 1px dashed #ccc; padding-bottom: 15px; }
         .res:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
         .res-meta { color: #228b22; font-weight: bold; }
         .res-num { color: #228b22; }
         .res-name { color: #228b22; }
-        .res-body { margin-top: 5px; white-space: pre-wrap; padding-left: 15px; color: #000000; } /* 本文は読みやすい黒 */
+        .res-body { margin-top: 5px; white-space: pre-wrap; padding-left: 15px; color: #000000; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <h1>お前らの避難所掲示板(仮)</h1>
-        <p>一番安定している初期型をベースに、緑文字と同一人物判定を追加したコードです。</p>
+        <p>精度が良い初期型をベースに、スレッド作成機能だけをシンプルに追加した決定版です。</p>
     </div>
 
-    <!-- 書き込みフォーム -->
-    <div class="post-form">
-        <div class="form-group">
-            <label for="nameInput">名前：</label>
-            <input type="text" id="nameInput" value="名無しさん">
+    <!-- スレッド切り替えボタンが並ぶ場所 -->
+    <div id="threadTabs" class="thread-tabs"></div>
+
+    <div class="forms-container">
+        <!-- 書き込みフォーム -->
+        <div class="post-form">
+            <h3 style="margin-top:0; color:#333;">このスレに書き込む</h3>
+            <div class="form-group">
+                <label for="nameInput">名前：</label>
+                <input type="text" id="nameInput" value="名無しさん">
+            </div>
+            <div class="form-group">
+                <label for="bodyInput">本文：</label>
+                <textarea id="bodyInput" placeholder="書き込み内容を入力してください"></textarea>
+            </div>
+            <div style="text-align: right;">
+                <button class="submit-btn" onclick="addPost()">書き込む</button>
+            </div>
         </div>
-        <div class="form-group">
-            <label for="bodyInput">本文：</label>
-            <textarea id="bodyInput" placeholder="書き込み内容を入力してください"></textarea>
-        </div>
-        <div style="text-align: right;">
-            <button class="submit-btn" onclick="addPost()">書き込む</button>
+
+        <!-- 新スレ作成フォーム -->
+        <div class="post-form" style="border-color: #ff9999;">
+            <h3 style="margin-top:0; color:#ff0000;">新スレッドを建てる</h3>
+            <div class="form-group">
+                <label for="newTitleInput">タイトル：</label>
+                <input type="text" id="newTitleInput" placeholder="新しいスレのタイトル">
+            </div>
+            <div class="form-group">
+                <label for="newNameInput">名前：</label>
+                <input type="text" id="newNameInput" value="名無しさん">
+            </div>
+            <div style="text-align: right;">
+                <button class="submit-btn" style="background:#ffcccc; border-color:#ff6666;" onclick="createThread()">スレを建てる</button>
+            </div>
         </div>
     </div>
 
     <!-- レス一覧 -->
     <div class="thread">
-        <h2>【本スレ】雑談・アドバイス総合スレッド ★1</h2>
-        <div id="resList">
-            <!-- ここに書き込みが追加されます -->
-        </div>
+        <h2 id="currentThreadTitle">スレッドタイトル</h2>
+        <div id="resList"></div>
     </div>
 
     <script>
-        // 初期の歓迎＆アドバイスメッセージ
-        let posts = [
-            { name: "管理人 ★", date: "2026/09/25(金) 20:00:00", sign: "◆Ad7B9", body: "２ちゃんねる風の掲示板を開設しました！\n初期型の最も安定したシステムです。\nアドバイスや雑談など、自由に書き込んでいってください！" },
-            { name: "名無しさん", date: "2026/09/25(金) 20:05:00", sign: "◆Xy3Z8", body: "新スレおつ！やっぱりシンプルなこれが一番バグらなくて最高だなww" }
+        // 最初から用意されている2つの固定スレッドデータ
+        let threads = [
+            {
+                title: "【本スレ】雑談総合スレッド ★1",
+                posts: [
+                    { name: "管理人 ★", date: "2026/09/25(金) 20:00:00", sign: "◆Ad7B9", body: "２ちゃんねる風の掲示板を開設しました！\n初期型の最も安定したシステムです。\nアドバイスや雑談など、自由に書き込んでいってください！" },
+                    { name: "名無しさん", date: "2026/09/25(金) 20:05:00", sign: "◆Xy3Z8", body: "新スレおつ！やっぱりシンプルなこれが一番バグらなくて最高だなww" }
+                ]
+            },
+            {
+                title: "【開発】制作者へのアドバイス・バグ報告スレ ★1",
+                posts: [
+                    { name: "管理人 ★", date: "2026/09/25(金) 20:01:00", sign: "◆Ad7B9", body: "このウェブサイトの制作者への応援メッセージや、機能のアドバイスをするスレッドです！" }
+                ]
+            }
         ];
 
-        // 誰が書いたか特定する記号を自動で作る関数
+        // 現在表示しているスレッドの番号（0番目が最初）
+        let currentThreadIndex = 0;
+
+        // 同一人物判定の記号を作る関数
         function getUniqueSign(name) {
             const seed = name + navigator.userAgent;
             let hash = 0;
@@ -78,16 +122,32 @@
             return sign;
         }
 
-        // 画面に書き込みを表示する
-        function displayPosts() {
-            const resList = document.getElementById('resList');
-            if (!resList) return;
-            resList.innerHTML = '';
+        // 画面を更新する（タブ、タイトル、レス一覧をすべて描画）
+        function updateScreen() {
+            // 1. タブ（スレ一覧ボタン）の表示
+            const tabsDiv = document.getElementById('threadTabs');
+            tabsDiv.innerHTML = '';
+            threads.forEach((thread, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'tab-btn' + (index === currentThreadIndex ? ' active' : '');
+                btn.textContent = `${thread.title} (${thread.posts.length})`;
+                btn.onclick = () => {
+                    currentThreadIndex = index;
+                    updateScreen();
+                };
+                tabsDiv.appendChild(btn);
+            });
 
-            posts.forEach((post, index) => {
+            // 2. 現在のスレタイトルの表示
+            const activeThread = threads[currentThreadIndex];
+            document.getElementById('currentThreadTitle').textContent = activeThread.title;
+
+            // 3. レス一覧の表示
+            const resList = document.getElementById('resList');
+            resList.innerHTML = '';
+            activeThread.posts.forEach((post, index) => {
                 const resDiv = document.createElement('div');
                 resDiv.className = 'res';
-                
                 resDiv.innerHTML = `
                     <div class="res-meta">
                         <span class="res-num">${index + 1}</span> ：
@@ -101,11 +161,17 @@
             });
         }
 
-        // ボタンを押したときに書き込みを追加する
+        // 日時を綺麗に作る関数
+        function getNowDateString() {
+            const now = new Date();
+            const week = ["日", "月", "火", "水", "木", "金", "土"][now.getDay()];
+            return `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}(${week}) ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+        }
+
+        // コメントを書き込む関数
         function addPost() {
             const nameInput = document.getElementById('nameInput');
             const bodyInput = document.getElementById('bodyInput');
-
             const name = nameInput.value.trim() || "名無しさん";
             const body = bodyInput.value.trim();
 
@@ -114,32 +180,58 @@
                 return;
             }
 
-            // 日時を綺麗に作る
-            const now = new Date();
-            const week = ["日", "月", "火", "水", "木", "金", "土"][now.getDay()];
-            const dateStr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}(${week}) ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+            const activeThread = threads[currentThreadIndex];
 
-            // 500レス制限のチェック
-            if (posts.length >= 500) {
+            // 500レス制限チェック
+            if (activeThread.posts.length >= 500) {
                 alert("総会話数が500に達したため、これ以上書き込めません！");
                 return;
             }
 
-            // データを追加
-            posts.push({ 
-                name: name, 
-                date: dateStr, 
-                sign: getUniqueSign(name), 
-                body: body 
+            activeThread.posts.push({
+                name: name,
+                date: getNowDateString(),
+                sign: getUniqueSign(name),
+                body: body
             });
 
-            // 入力欄をクリアして画面を更新
             bodyInput.value = '';
-            displayPosts();
+            updateScreen();
         }
 
-        // 最初にページを開いたときに実行
-        displayPosts();
+        // 新しいスレッドを建てる関数
+        function createThread() {
+            const titleInput = document.getElementById('newTitleInput');
+            const nameInput = document.getElementById('newNameInput');
+            const title = titleInput.value.trim();
+            const name = nameInput.value.trim() || "名無しさん";
+
+            if (!title) {
+                alert("スレッドのタイトルを入力してください！");
+                return;
+            }
+
+            // 新スレ用データを追加
+            threads.push({
+                title: title,
+                posts: [
+                    {
+                        name: name,
+                        date: getNowDateString(),
+                        sign: getUniqueSign(name),
+                        body: `スレッド「${title}」が建てられました。`
+                    }
+                ]
+            });
+
+            titleInput.value = '';
+            // 新しく建てたスレッドを自動で開く
+            currentThreadIndex = threads.length - 1;
+            updateScreen();
+        }
+
+        // ページを開いたときに一番最初の描画をする
+        updateScreen();
     </script>
 
 </body>
