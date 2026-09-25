@@ -33,14 +33,13 @@
         
         .thread-box { background: #fff; border: 1px solid #ccc; padding: 20px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
-        /* レス（書き込み）の文字をすべて緑色に変更 */
         .res { margin-bottom: 20px; line-height: 1.5; border-bottom: 1px dashed #ccc; padding-bottom: 15px; }
         .res:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-        .res-meta { color: #228b22; font-weight: bold; } /* 全体を緑色に */
-        .res-num { color: #228b22; }
+        .res-meta { color: #228b22; font-weight: bold; }
+        .res-num { color: #228b22; cursor: pointer; text-decoration: underline; } /* アンカー用リンク */
         .res-name { color: #228b22; }
-        .itchi-tag { color: #ff0000; font-weight: bold; } /* イッチタグだけ目立たせる */
-        .res-body { margin-top: 5px; white-space: pre-wrap; padding-left: 15px; color: #000000; } /* 本文は黒 */
+        .itchi-tag { color: #ff0000; font-weight: bold; }
+        .res-body { margin-top: 5px; white-space: pre-wrap; padding-left: 15px; color: #000000; }
         
         .limit-over { color: red; font-weight: bold; font-size: 16px; padding: 10px; text-align: center; background: #ffe6e6; border: 1px solid red; border-radius: 4px; }
     </style>
@@ -49,7 +48,7 @@
 
     <div class="header">
         <h1>お前らの避難所掲示板(仮)</h1>
-        <p>同一人物判定・イッチ判定・1スレ500制限が実装された本格掲示板です。</p>
+        <p>バグを修正し、アンカー機能（レス番クリックで返信）を追加した最新版です。</p>
     </div>
 
     <div class="main-layout">
@@ -68,7 +67,7 @@
         </div>
 
         <div class="content-area">
-            <!-- 書き込みフォームエリア -->
+            <!-- 書き込みフォーム -->
             <div class="post-form" id="formArea">
                 <div class="form-group">
                     <label for="nameInput">名前：</label>
@@ -94,27 +93,32 @@
     </div>
 
     <script>
-        // 初期のダミーデータ
+        // 初期のテストスレッドデータ
         const defaultData = [
             {
-                id: "thread_1",
+                id: "thread_default_1",
                 title: "【本スレ】雑談スレッド ★1",
                 creatorName: "管理人 ★",
                 posts: [
                     { name: "管理人 ★", date: "2026/09/25(金) 20:00:00", uniqueSign: "◆Ad7B9", body: "２ちゃんねる風の掲示板を開設しました！\n1スレ最大500レスまで書き込めます。" },
-                    { name: "名無しさん", date: "2026/09/25(金) 20:05:23", uniqueSign: "◆Xy3Z8", body: "新スレおつ！名前も全部みどりで見やすいな！" },
-                    { name: "管理人 ★", date: "2026/09/25(金) 20:06:10", uniqueSign: "◆Ad7B9", body: "ありがとうございます。楽しんでいってください。" }
+                    { name: "名無しさん", date: "2026/09/25(金) 20:05:23", uniqueSign: "◆Xy3Z8", body: "スレ番（数字）をクリックすると、自動で「>>数字」って本文に入力されるぞ！" }
                 ]
             }
         ];
 
-        let bbsData = JSON.parse(localStorage.getItem('my_2ch_bbs_data_v2')) || defaultData;
-        let activeThreadId = bbsData.length > 0 ? bbsData[0].id : "";
+        // データの読み込み
+        let bbsData = JSON.parse(localStorage.getItem('my_2ch_bbs_data_v3')) || defaultData;
+        
+        // アクティブなスレッドの初期選択バグを修正
+        let activeThreadId = "";
+        if (bbsData && bbsData.length > 0) {
+            activeThreadId = bbsData[0].id;
+        }
 
-        // 文字列から簡易的なハッシュ記号を作る関数（同一人物判定用）
+        // 同一人物判定用の記号生成
         function generateUniqueSign(name) {
-            const today = new Date().toDateString(); // 日替わり要素
-            const userAgent = navigator.userAgent;   // ブラウザ情報要素
+            const today = new Date().toDateString();
+            const userAgent = navigator.userAgent;
             const seed = name + today + userAgent;
             let hash = 0;
             for (let i = 0; i < seed.length; i++) {
@@ -136,11 +140,12 @@
         }
 
         function saveData() {
-            localStorage.setItem('my_2ch_bbs_data_v2', JSON.stringify(bbsData));
+            localStorage.setItem('my_2ch_bbs_data_v3', JSON.stringify(bbsData));
         }
 
         function displayThreads() {
             const threadListUl = document.getElementById('threadList');
+            if (!threadListUl) return;
             threadListUl.innerHTML = '';
 
             bbsData.forEach((thread) => {
@@ -166,29 +171,28 @@
             const limitMessage = document.getElementById('limitMessage');
 
             if (!currentThread) {
-                titleH2.textContent = "スレッドがありません";
-                resListDiv.innerHTML = '';
+                if (titleH2) titleH2.textContent = "スレッドがありません";
+                if (resListDiv) resListDiv.innerHTML = '';
                 return;
             }
 
-            titleH2.textContent = currentThread.title;
-            resListDiv.innerHTML = '';
+            if (titleH2) titleH2.textContent = currentThread.title;
+            if (resListDiv) resListDiv.innerHTML = '';
 
             // 500レス制限チェック
             if (currentThread.posts.length >= 500) {
-                formArea.style.display = 'none';
-                limitMessage.style.display = 'block';
+                if (formArea) formArea.style.display = 'none';
+                if (limitMessage) limitMessage.style.display = 'block';
             } else {
-                formArea.style.display = 'block';
-                limitMessage.style.display = 'none';
+                if (formArea) formArea.style.display = 'block';
+                if (limitMessage) limitMessage.style.display = 'none';
             }
 
-            // レスの表示ループ
+            // 表示処理
             currentThread.posts.forEach((post, index) => {
                 const resDiv = document.createElement('div');
                 resDiv.className = 'res';
                 
-                // イッチ（スレ主）判定
                 let itchiHtml = "";
                 if (post.name === currentThread.creatorName && index !== 0) {
                     itchiHtml = ' <span class="itchi-tag">[イッチ]</span>';
@@ -196,22 +200,20 @@
 
                 resDiv.innerHTML = `
                     <div class="res-meta">
-                        <span class="res-num">${index + 1}</span> ：
+                        <span class="res-num" onclick="insertAnchor(${index + 1})">${index + 1}</span> ：
                         <span class="res-name">${post.name}</span>${itchiHtml} ：
                         <span class="res-date">${post.date}</span> 
                         <span class="res-sign">記号:${post.uniqueSign}</span>
                     </div>
                     <div class="res-body">${post.body}</div>
                 `;
-                resListDiv.appendChild(resDiv);
+                if (resListDiv) resListDiv.appendChild(resDiv);
             });
 
-            // ぴったり500に達した場合の特別アナウンス
+            // ぴったり500に達した場合のアナウンス
             if (currentThread.posts.length === 500) {
                 const endDiv = document.createElement('div');
                 endDiv.className = 'res';
                 endDiv.innerHTML = `
                     <div class="res-meta">
                         <span class="res-num">500</span> ：
-                        <span class="res-name">システム</span> ：
-                        <span class="res-date">${getFormattedDate()}</span>
